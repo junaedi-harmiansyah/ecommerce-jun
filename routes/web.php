@@ -19,4 +19,10 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/home', 'HomeController@index')->name('home');
+Route::group(['prefix' => 'administrator', 'middleware' => 'auth'], function() {
+    Route::get('/home', 'HomeController@index')->name('home'); //JADI ROUTING INI SUDAH ADA DARI ARTIKEL SEBELUMNYA TAPI KITA PINDAHKAN KEDALAM GROUPING
+
+    //INI ADALAH ROUTE BARU
+    Route::resource('category', 'CategoryController')->except(['create', 'show']);
+    Route::resource('product', 'ProductController');
+});
