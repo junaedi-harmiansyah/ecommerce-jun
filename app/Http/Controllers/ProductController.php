@@ -10,6 +10,7 @@ use File;
 use App\Jobs\ProductJob;
 use App\Jobs\MarketplaceJob;
 
+
 class ProductController extends Controller
 {
     public function index()
@@ -100,7 +101,8 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'price' => $request->price,
             'weight' => $request->weight,
-            'image' => $filename
+            'image' => $filename,
+            'status'=>$request->status
         ]);
         return redirect(route('product.index'))->with(['success' => 'Data Produk Diperbaharui']);
     }
@@ -146,4 +148,5 @@ class ProductController extends Controller
         MarketplaceJob::dispatch($request->username, 10);
         return redirect()->back()->with(['success' => 'Produk Dalam Antrian']);
     }
+  
 }

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('city', 'Ecommerce\CartController@getCity'); //ROUTE API UNTUK /CITY
+Route::get('district', 'Ecommerce\CartController@getDistrict'); //ROUTE API UNTUK /DISTRICT
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
