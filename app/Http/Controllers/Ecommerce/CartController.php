@@ -13,6 +13,8 @@ use App\Order;
 use App\OrderDetail;
 use Illuminate\Support\Str;
 use DB;
+use App\Mail\CustomerRegisterMail;
+use Mail;
 
 class CartController extends Controller
 {
@@ -25,8 +27,8 @@ class CartController extends Controller
     ]);
 
     //AMBIL DATA CART DARI COOKIE, KARENA BENTUKNYA JSON MAKA KITA GUNAKAN JSON_DECODE UNTUK MENGUBAHNYA MENJADI ARRAY
-    $carts = json_decode($request->cookie('dw-carts'), true); 
-  
+    //$carts = json_decode($request->cookie('dw-carts'), true); 
+  $carts = $this->getCarts();
     //CEK JIKA CARTS TIDAK NULL DAN PRODUCT_ID ADA DIDALAM ARRAY CARTS
     if ($carts && array_key_exists($request->product_id, $carts)) {
         //MAKA UPDATE QTY-NYA BERDASARKAN PRODUCT_ID YANG DIJADIKAN KEY ARRAY
@@ -53,7 +55,8 @@ class CartController extends Controller
 public function listCart()
 {
     //MENGAMBIL DATA DARI COOKIE
-    $carts = json_decode(request()->cookie('dw-carts'), true);
+    //$carts = json_decode(request()->cookie('dw-carts'), true);
+    $carts = $this->getCarts();
     //UBAH ARRAY MENJADI COLLECTION, KEMUDIAN GUNAKAN METHOD SUM UNTUK MENGHITUNG SUBTOTAL
     $subtotal = collect($carts)->sum(function($q) {
         return $q['qty'] * $q['product_price']; //SUBTOTAL TERDIRI DARI QTY * PRICE
@@ -64,7 +67,8 @@ public function listCart()
 public function updateCart(Request $request)
 {
     //AMBIL DATA DARI COOKIE
-    $carts = json_decode(request()->cookie('dw-carts'), true);
+    //$carts = json_decode(request()->cookie('dw-carts'), true);
+    $carts = $this->getCarts();
     //KEMUDIAN LOOPING DATA PRODUCT_ID, KARENA NAMENYA ARRAY PADA VIEW SEBELUMNYA
     //MAKA DATA YANG DITERIMA ADALAH ARRAY SEHINGGA BISA DI-LOOPING
     foreach ($request->product_id as $key => $row) {
@@ -151,12 +155,15 @@ public function processCheckout(Request $request)
         });
 
         //SIMPAN DATA CUSTOMER BARU
+        $password = Str::random(8);
         $customer = Customer::create([
             'name' => $request->customer_name,
             'email' => $request->email,
+            'password' => $password, //TAMBAHKAN LINE INI
             'phone_number' => $request->customer_phone,
             'address' => $request->customer_address,
             'district_id' => $request->district_id,
+            'activate_token' => Str::random(30), //TAMBAKAN LINE INI
             'status' => false
         ]);
 
@@ -192,6 +199,7 @@ public function processCheckout(Request $request)
         //KOSONGKAN DATA KERANJANG DI COOKIE
         $cookie = cookie('dw-carts', json_encode($carts), 2880);
         //REDIRECT KE HALAMAN FINISH TRANSAKSI
+        Mail::to($request->email)->send(new CustomerRegisterMail($customer, $password));
         return redirect(route('front.finish_checkout', $order->invoice))->cookie($cookie);
     } catch (Exception $e) {
         //JIKA TERJADI ERROR, MAKA ROLLBACK DATANYA
@@ -207,4 +215,5 @@ public function checkoutFinish($invoice)
     //LOAD VIEW checkout_finish.blade.php DAN PASSING DATA ORDER
     return view('ecommerce.checkout_finish', compact('order'));
 }
+
 }
